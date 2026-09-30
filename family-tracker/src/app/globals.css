@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* Цвета приложения. Тёмная тема включается по настройке телефона. */
+:root {
+  --bg: #f6f3ee;
+  --card: #ffffff;
+  --card-muted: #efeae2;
+  --text: #22201c;
+  --muted: #7a746b;
+  --line: rgba(34, 32, 28, 0.1);
+  --accent: #2f7d6b;
+  --accent-soft: #dcefe9;
+  --accent-text: #ffffff;
+  --family: #c0693f;
+  --family-soft: #f7e3d8;
+  --danger: #c2413b;
+  --nav-bg: rgba(255, 255, 255, 0.86);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121412;
+    --card: #1c1f1d;
+    --card-muted: #262a27;
+    --text: #eeebe6;
+    --muted: #9c978f;
+    --line: rgba(238, 235, 230, 0.1);
+    --accent: #5cc0a6;
+    --accent-soft: #1d3a33;
+    --accent-text: #0e1b17;
+    --family: #e59166;
+    --family-soft: #3b271d;
+    --danger: #ef7b74;
+    --nav-bg: rgba(28, 31, 29, 0.86);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-muted: var(--card-muted);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-family: var(--family);
+  --color-family-soft: var(--family-soft);
+  --color-danger: var(--danger);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* Поля ввода не меньше 16px — иначе iPhone зумит страницу при фокусе. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
