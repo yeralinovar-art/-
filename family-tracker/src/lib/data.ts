@@ -25,12 +25,15 @@ export function mealByHour(hour: number): Meal {
   return "snack";
 }
 
+export type Unit = "г" | "мл";
+
 export type FoodEntry = {
   id: string;
   entry_date: string;
   meal: Meal;
   name: string;
   grams: number | null;
+  unit: Unit;
   kcal: number;
   protein: number;
   fat: number;
@@ -52,10 +55,11 @@ export type Food = {
   portion_g: number;
   portion_label: string | null;
   pregnancy_warning: string | null;
+  unit: Unit;
 };
 
 export const FOOD_COLUMNS =
-  "id, family_id, name, brand, barcode, kcal_100, protein_100, fat_100, carbs_100, caffeine_100, portion_g, portion_label, pregnancy_warning";
+  "id, family_id, name, brand, barcode, kcal_100, protein_100, fat_100, carbs_100, caffeine_100, portion_g, portion_label, pregnancy_warning, unit";
 
 export type DayTotals = { kcal: number; protein: number; fat: number; carbs: number; caffeine: number };
 
@@ -127,11 +131,12 @@ export const getFoodEntries = cache(async (date: string): Promise<FoodEntry[]> =
   const supabase = await createClient();
   const { data } = await supabase
     .from("food_entries")
-    .select("id, entry_date, meal, name, grams, kcal, protein, fat, carbs, caffeine_mg")
+    .select("id, entry_date, meal, name, grams, unit, kcal, protein, fat, carbs, caffeine_mg")
     .eq("entry_date", date)
     .order("created_at", { ascending: true });
   return (data ?? []).map((r) => ({
     ...r,
+    unit: r.unit === "мл" ? "мл" : "г",
     grams: r.grams === null ? null : Number(r.grams),
     kcal: Number(r.kcal),
     protein: Number(r.protein),
@@ -181,7 +186,7 @@ export async function getRecentFoods(limit = 12) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("food_entries")
-    .select("food_id, name, grams, kcal, protein, fat, carbs, caffeine_mg")
+    .select("food_id, name, grams, unit, kcal, protein, fat, carbs, caffeine_mg")
     .order("created_at", { ascending: false })
     .limit(60);
   const seen = new Set<string>();
@@ -193,6 +198,7 @@ export async function getRecentFoods(limit = 12) {
     out.push({
       name: r.name,
       grams: r.grams === null ? null : Number(r.grams),
+      unit: r.unit === "мл" ? "мл" : "г",
       kcal: Number(r.kcal),
       protein: Number(r.protein),
       fat: Number(r.fat),
@@ -219,5 +225,6 @@ export function toFood(r: Record<string, unknown>): Food {
     portion_g: Number(r.portion_g),
     portion_label: (r.portion_label as string | null) ?? null,
     pregnancy_warning: (r.pregnancy_warning as string | null) ?? null,
+    unit: r.unit === "мл" ? "мл" : "г",
   };
 }

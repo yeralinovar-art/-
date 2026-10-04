@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { FOOD_COLUMNS, isMeal, toFood } from "@/lib/data";
+import { FOOD_COLUMNS, isMeal, mealByHour, toFood } from "@/lib/data";
 import { checkRange, error, isDate, num, str, type FormMessageState } from "@/lib/form";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { todayKey } from "@/lib/time";
+import { TIME_ZONE, todayKey } from "@/lib/time";
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -45,6 +45,7 @@ export async function addFromFood(_prev: FormMessageState, formData: FormData): 
     food_id: food.id,
     name: food.brand ? `${food.name} (${food.brand})` : food.name,
     grams,
+    unit: food.unit,
     kcal: r1(food.kcal_100 * k),
     protein: r1(food.protein_100 * k),
     fat: r1(food.fat_100 * k),
@@ -86,6 +87,7 @@ export async function addQuick(_prev: FormMessageState, formData: FormData): Pro
     meal: t.meal,
     name,
     grams,
+    unit: str(formData, "unit") === "мл" ? "мл" : "г",
     kcal,
     protein: protein ?? 0,
     fat: fat ?? 0,
@@ -151,6 +153,43 @@ export async function createFoodAndAdd(_prev: FormMessageState, formData: FormDa
   });
   if (dbError) return error(dbError.message);
   done(t.date);
+}
+
+/** Напиток из справочника стандартной порцией — кнопки на карточке «Кофеин». */
+export async function addDrink(formData: FormData) {
+  const session = await getSession();
+  if (!session) return;
+  const date = str(formData, "date") || todayKey();
+  if (!isDate(date)) return;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("foods")
+    .select(FOOD_COLUMNS)
+    .is("family_id", null)
+    .eq("name", str(formData, "name"))
+    .limit(1)
+    .maybeSingle();
+  if (!data) return;
+  const food = toFood(data);
+  const k = food.portion_g / 100;
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "2-digit", hour12: false }).format(new Date()));
+
+  await supabase.from("food_entries").insert({
+    user_id: session.userId,
+    entry_date: date,
+    meal: date === todayKey() ? mealByHour(hour) : "snack",
+    food_id: food.id,
+    name: food.name,
+    grams: food.portion_g,
+    unit: food.unit,
+    kcal: r1(food.kcal_100 * k),
+    protein: r1(food.protein_100 * k),
+    fat: r1(food.fat_100 * k),
+    carbs: r1(food.carbs_100 * k),
+    caffeine_mg: r1(food.caffeine_100 * k),
+  });
+  revalidatePath("/", "layout");
 }
 
 export async function deleteFoodEntry(formData: FormData) {

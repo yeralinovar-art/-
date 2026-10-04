@@ -150,7 +150,7 @@ function SearchTab({
                   </span>
                   <span className="block truncate text-xs text-muted">
                     {f.brand ? `${f.brand} · ` : ""}
-                    {fmt(f.kcal_100)} ккал / 100 г
+                    {fmt(f.kcal_100)} ккал / 100 {f.unit}
                   </span>
                 </span>
                 <Plus className="size-5 shrink-0 text-accent" aria-hidden />
@@ -190,6 +190,7 @@ function RecentRow({ item, meal, date }: { item: Recent; meal: Meal; date: strin
         date,
         name: item.name,
         grams: item.grams ?? "",
+        unit: item.unit,
         kcal: item.kcal,
         protein: item.protein,
         fat: item.fat,
@@ -201,7 +202,7 @@ function RecentRow({ item, meal, date }: { item: Recent; meal: Meal; date: strin
       <span className="min-w-0">
         <span className="block truncate font-medium">{item.name}</span>
         <span className="block text-xs text-muted">
-          {item.grams ? `${fmt(item.grams)} г · ` : ""}
+          {item.grams ? `${fmt(item.grams)} ${item.unit} · ` : ""}
           {r0(item.kcal)} ккал
         </span>
         {state.message && <span className="block text-xs text-danger">{state.message.text}</span>}
@@ -244,7 +245,7 @@ function PortionSheet({
     [food.portion_label ? `${food.portion_label}` : "порция", food.portion_g],
     ["½", food.portion_g / 2],
     ["×2", food.portion_g * 2],
-    ["100 г", 100],
+    [`100 ${food.unit}`, 100],
   ];
 
   return (
@@ -256,7 +257,7 @@ function PortionSheet({
             <h2 className="text-lg font-semibold">{food.name}</h2>
             <p className="text-sm text-muted">
               {food.brand ? `${food.brand} · ` : ""}
-              {fmt(food.kcal_100)} ккал на 100 г
+              {fmt(food.kcal_100)} ккал на 100 {food.unit}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Закрыть" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-muted">
@@ -271,7 +272,7 @@ function PortionSheet({
         <input type="hidden" name="food_id" value={food.id} />
         <input type="hidden" name="meal" value={meal} />
         <input type="hidden" name="date" value={date} />
-        <NumberField label="Порция" name="grams" suffix="г" value={grams} onChange={(e) => setGrams(e.target.value)} />
+        <NumberField label="Порция" name="grams" suffix={food.unit} value={grams} onChange={(e) => setGrams(e.target.value)} />
         <div className="flex flex-wrap gap-2">
           {chips.map(([label, value]) => (
             <button
@@ -322,6 +323,7 @@ function QuickTab({ meal, date }: { meal: Meal; date: string }) {
         <NumberField label="Жиры" name="fat" suffix="г" />
         <NumberField label="Углев." name="carbs" suffix="г" />
       </div>
+      <NumberField label="Кофеин, если есть" name="caffeine_mg" suffix="мг" hint="Чашка кофе — около 80–100 мг, чай — 40–50 мг" />
       <FormMessage message={state.message} />
       <SubmitButton>Добавить</SubmitButton>
     </form>
