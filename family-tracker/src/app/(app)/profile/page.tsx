@@ -1,4 +1,5 @@
-import { LogOut, PlusSquare, Share } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, HeartPulse, LogOut, PlusSquare, Share } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, FamilyBadge } from "@/components/ui";
@@ -37,6 +38,17 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
             </>
           )}
         </Card>
+
+        <Link href="/profile/health" className="block active:opacity-90">
+          <Card className="flex items-center gap-3">
+            <HeartPulse className="size-6 shrink-0 text-accent" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <h2 className="font-semibold">Здоровье и цели</h2>
+              <p className="text-sm text-muted">Рост, активность, беременность, норма калорий. Видно только вам.</p>
+            </div>
+            <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+          </Card>
+        </Link>
 
         <ProfileForm
           displayName={profile.display_name}
