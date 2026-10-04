@@ -1,21 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Apple, Dumbbell, ListPlus, Plus, Scale, Timer, X, type LucideIcon } from "lucide-react";
+import { Apple, Droplet, Plus, Scale, X } from "lucide-react";
+import { addWater } from "@/app/(app)/food/actions";
 
-type Action = { label: string; icon: LucideIcon; stage: number };
-
-// Быстрый ввод с любого экрана. Пункты оживают на своих этапах разработки.
-const ACTIONS: Action[] = [
-  { label: "Еда", icon: Apple, stage: 2 },
-  { label: "Вес", icon: Scale, stage: 2 },
-  { label: "Задача", icon: ListPlus, stage: 4 },
-  { label: "Тренировка", icon: Dumbbell, stage: 4 },
-  { label: "Таймер", icon: Timer, stage: 4 },
-];
-
+// Быстрый ввод с любого экрана — только то, что уже работает.
 export function QuickAdd() {
   const [open, setOpen] = useState(false);
+  const [waterAdded, setWaterAdded] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -23,6 +16,14 @@ export function QuickAdd() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  const close = () => {
+    setOpen(false);
+    setWaterAdded(false);
+  };
+
+  const tile =
+    "flex w-full flex-col items-center gap-1.5 rounded-2xl bg-card-muted px-2 py-4 transition active:scale-95";
 
   return (
     <>
@@ -38,39 +39,43 @@ export function QuickAdd() {
 
       {open && (
         <div className="fixed inset-0 z-40 flex items-end" role="dialog" aria-modal="true" aria-label="Быстро добавить">
-          <button
-            type="button"
-            aria-label="Закрыть"
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setOpen(false)}
-          />
+          <button type="button" aria-label="Закрыть" className="absolute inset-0 bg-black/40" onClick={close} />
           <div className="pb-safe relative mx-auto w-full max-w-md rounded-t-3xl bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">Добавить</h2>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Закрыть"
-                className="flex size-10 items-center justify-center rounded-full bg-card-muted"
-              >
+              <button type="button" onClick={close} aria-label="Закрыть" className="flex size-10 items-center justify-center rounded-full bg-card-muted">
                 <X className="size-5" aria-hidden />
               </button>
             </div>
             <ul className="grid grid-cols-3 gap-3 pb-4">
-              {ACTIONS.map(({ label, icon: Icon, stage }) => (
-                <li key={label}>
-                  <button
-                    type="button"
-                    disabled
-                    className="flex w-full flex-col items-center gap-1.5 rounded-2xl bg-card-muted px-2 py-4 disabled:opacity-60"
-                  >
-                    <Icon className="size-7 text-accent" aria-hidden />
-                    <span className="text-sm font-medium">{label}</span>
-                    <span className="text-[10px] text-muted">этап {stage}</span>
+              <li>
+                <Link href="/food/add" onClick={close} className={tile}>
+                  <Apple className="size-7 text-accent" aria-hidden />
+                  <span className="text-sm font-medium">Еда</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/weight" onClick={close} className={tile}>
+                  <Scale className="size-7 text-accent" aria-hidden />
+                  <span className="text-sm font-medium">Вес</span>
+                </Link>
+              </li>
+              <li>
+                <form
+                  action={async (fd) => {
+                    await addWater(fd);
+                    setWaterAdded(true);
+                  }}
+                >
+                  <input type="hidden" name="delta" value="250" />
+                  <button type="submit" className={tile}>
+                    <Droplet className="size-7 text-sky-500" aria-hidden />
+                    <span className="text-sm font-medium">{waterAdded ? "Ещё стакан" : "Стакан воды"}</span>
                   </button>
-                </li>
-              ))}
+                </form>
+              </li>
             </ul>
+            {waterAdded && <p className="pb-2 text-center text-sm text-accent">+250 мл записано</p>}
           </div>
         </div>
       )}
