@@ -26,11 +26,13 @@ export function AddFood({
   date,
   pregnant,
   recent,
+  initialQuery = "",
 }: {
   meal: Meal;
   date: string;
   pregnant: boolean;
   recent: Recent[];
+  initialQuery?: string;
 }) {
   const [meal, setMeal] = useState<Meal>(initialMeal);
   const [tab, setTab] = useState<Tab>("search");
@@ -74,7 +76,7 @@ export function AddFood({
         ))}
       </div>
 
-      {tab === "search" && <SearchTab meal={meal} date={date} recent={recent} onSelect={setSelected} />}
+      {tab === "search" && <SearchTab meal={meal} date={date} recent={recent} onSelect={setSelected} initialQuery={initialQuery} />}
       {tab === "quick" && <QuickTab meal={meal} date={date} />}
       {tab === "own" && <OwnTab meal={meal} date={date} />}
       {tab === "barcode" && <BarcodeTab onFound={setSelected} />}
@@ -91,13 +93,15 @@ function SearchTab({
   date,
   recent,
   onSelect,
+  initialQuery,
 }: {
   meal: Meal;
   date: string;
   recent: Recent[];
   onSelect: (f: Food) => void;
+  initialQuery: string;
 }) {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
 
