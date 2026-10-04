@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ComingSoon } from "@/components/ComingSoon";
 import { PageHeader } from "@/components/PageHeader";
 import { ProjectBars } from "@/components/ProjectBars";
 import { Card } from "@/components/ui";
@@ -16,21 +15,28 @@ import {
 } from "@/lib/health";
 import { requireFamilySession } from "@/lib/session";
 import { todayKey } from "@/lib/time";
-import { KcalChart, WeightChart, type CorridorPoint } from "./Charts";
+import { ActivityChart, KcalChart, WeightChart, type CorridorPoint } from "./Charts";
+import { getActivities } from "@/lib/activity-data";
 
 export const metadata = { title: "Прогресс — Семья" };
 
 export default async function ProgressPage() {
   const today = todayKey();
   const timeRange = periodRange("week", todayKey());
-  const [{ profile }, health, weights, kcalDays, projects, timeEntries] = await Promise.all([
+  const [{ profile }, health, weights, kcalDays, projects, timeEntries, acts] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getWeights(),
     getDailyKcal(addDays(today, -13)),
     getProjects(true),
     getTimeEntries(timeRange.from),
+    getActivities(addDays(today, -13)),
   ]);
+  const activityDays = Array.from({ length: 14 }, (_, i) => {
+    const date = addDays(today, i - 13);
+    const day = acts.filter((a) => a.act_date === date);
+    return { date, minutes: day.reduce((s, a) => s + a.minutes, 0), kcal: day.reduce((s, a) => s + a.kcal, 0) };
+  });
 
   const points = movingAverage7(weights).map((p) => ({ date: p.date, kg: p.kg, avg: p.avg }));
   const target = dailyKcalTarget(health, weights.at(-1)?.kg ?? null, today);
@@ -102,7 +108,15 @@ export default async function ProgressPage() {
           )}
         </Card>
 
-        <ComingSoon items={[{ title: "Активность и тренировки", stage: 4 }]} />
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">Активность за 2 недели</h2>
+            <Link href="/activity" className="text-sm font-medium text-accent">
+              Подробнее →
+            </Link>
+          </div>
+          <ActivityChart days={activityDays} />
+        </Card>
       </div>
     </>
   );

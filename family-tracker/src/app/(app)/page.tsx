@@ -21,6 +21,12 @@ import { toTaskItems } from "@/lib/task-items";
 import { countInWeek, everyLabel, habitStreak, inView, sortTasks, streakLabel } from "@/lib/tasks";
 import { getChores, getHabits, getTasks } from "@/lib/tasks-data";
 import { ReadingCard } from "@/components/ReadingCard";
+import { ActivityCard } from "@/components/ActivityCard";
+import { QuoteCard } from "@/components/QuoteCard";
+import { WorkoutCard } from "@/components/WorkoutCard";
+import { burnedKcal, quoteOfDay, sharedWorkoutStreak } from "@/lib/activity";
+import { dayBurn, getActivities, getActivityGoals, getFavoriteIds, getQuotes, getSteps, getWorkoutLogs } from "@/lib/activity-data";
+import { buildSteps, totalMinutes, workoutForDay } from "@/lib/workouts";
 import { TimerCard } from "@/components/TimerCard";
 import { readingByDay, readingStreak } from "@/lib/timetrack";
 import { getBooks, getProjects, getReading, getReadingGoal, getRunningTimer } from "@/lib/timetrack-data";
@@ -48,7 +54,7 @@ function weeksWord(n: number) {
 
 export default async function TodayPage() {
   const today = todayKey();
-  const [session, health, entries, water, weights, meds, doses, children, visits, menu, tasks, habitData, chores, projects, timer, reading, books] = await Promise.all([
+  const [session, health, entries, water, weights, meds, doses, children, visits, menu, tasks, habitData, chores, projects, timer, reading, books, quotes, favs, wlogs, acts, steps, actGoals] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getFoodEntries(today),
@@ -66,6 +72,12 @@ export default async function TodayPage() {
     getRunningTimer(),
     getReading(today),
     getBooks(),
+    getQuotes(),
+    getFavoriteIds(),
+    getWorkoutLogs(addDays(today, -60)),
+    getActivities(today),
+    getSteps(today),
+    getActivityGoals(),
   ]);
   const readingGoal = await getReadingGoal(session.userId);
   const readDays = readingByDay(reading.sessions);
@@ -114,6 +126,16 @@ export default async function TodayPage() {
   const preg = health.is_pregnant && health.due_date ? pregnancyOn(health.due_date, today) : null;
   const pregStatus = last ? pregnancyWeightStatus(health, last.kg, today) : null;
   const sharp = sharpWeightChange(weights, Boolean(preg));
+  const quote = quoteOfDay(quotes, today);
+  const workout = workoutForDay(today);
+  const workoutVersion = preg ? "pregnancy" : "regular";
+  const workoutMinutes = totalMinutes(buildSteps(workout, workoutVersion, preg?.trimester ?? null));
+  const myLog = wlogs.find((l) => l.user_id === session.userId && l.log_date === today);
+  const partnerLog = session.partner ? wlogs.find((l) => l.user_id === session.partner?.id && l.log_date === today) : undefined;
+  const members = [session.userId, ...(session.partner ? [session.partner.id] : [])];
+  const workoutStreak = sharedWorkoutStreak(wlogs, members, today);
+  const burn = dayBurn(acts, steps, today);
+  const burned = burnedKcal(burn.workoutKcal, burn.activeKcal);
 
   return (
     <>
@@ -152,6 +174,8 @@ export default async function TodayPage() {
             <p className="text-xs text-muted">Рекомендации приложения не заменяют консультацию врача.</p>
           </Card>
         )}
+
+        {quote && <QuoteCard id={quote.id} text={quote.text} author={quote.author} favorite={favs.has(quote.id)} />}
 
         <Card>
           <div className="mb-1 flex items-center justify-between">
@@ -237,6 +261,15 @@ export default async function TodayPage() {
           </Card>
         )}
 
+        <WorkoutCard
+          workout={workout}
+          version={workoutVersion}
+          minutes={workoutMinutes}
+          myStatus={myLog?.status ?? null}
+          partner={session.partner ? { name: session.partner.display_name, status: partnerLog?.status ?? null } : null}
+          streak={workoutStreak}
+        />
+
         {(timer || projects.length > 0) && <TimerCard projects={projects} running={timer} serverNow={now} compact />}
 
         <ReadingCard
@@ -266,7 +299,9 @@ export default async function TodayPage() {
           </Link>
         )}
 
-        <DayTotalsCard totals={totals} target={target} href="/food" />
+        <ActivityCard steps={burn.steps} stepsGoal={actGoals.steps} workoutMinutes={burn.workoutMinutes} burned={burned} />
+
+        <DayTotalsCard totals={totals} target={target} href="/food" burned={burned} />
 
         <Link href={`/menu#d-${today}`} className="block active:opacity-90">
           <Card className="flex items-center gap-3">
@@ -348,9 +383,7 @@ export default async function TodayPage() {
 
         <ComingSoon
           items={[
-            { title: "Цитата дня", stage: 4, shared: true },
-            { title: "Мини-тренировка дня", stage: 4, shared: true },
-            { title: "Шаги и события календаря", stage: 6 },
+            { title: "Шаги с iPhone и события календаря", stage: 6 },
           ]}
         />
       </div>
