@@ -112,7 +112,10 @@ export default async function MedsPage() {
                 {c.name}
                 {ageLabel(c.birth_date) && <span className="font-normal text-muted"> · {ageLabel(c.birth_date)}</span>}
               </summary>
-              <div className="mt-3">
+              <div className="mt-3 flex flex-col gap-3">
+                <Link href={`/kids/${c.id}`} className="text-sm font-medium text-accent">
+                  Рост, вес, прививки, визиты →
+                </Link>
                 <ChildForm child={c} />
               </div>
             </details>

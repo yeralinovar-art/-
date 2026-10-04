@@ -10,7 +10,9 @@ import { WaterCard } from "@/components/WaterCard";
 import { DoseList } from "@/components/DoseList";
 import { getFoodEntries, getHealthProfile, getWater, getWeights, sumEntries } from "@/lib/data";
 import { toDoseItems } from "@/lib/dose-items";
-import { getChildren, getDoses, getMedications } from "@/lib/meds-data";
+import { VisitRow } from "@/components/VisitRow";
+import { upcomingVisits } from "@/lib/family-health";
+import { getChildren, getDoses, getMedications, getVisits } from "@/lib/meds-data";
 import {
   addDays,
   dailyKcalTarget,
@@ -34,7 +36,7 @@ function weeksWord(n: number) {
 
 export default async function TodayPage() {
   const today = todayKey();
-  const [session, health, entries, water, weights, meds, doses, children] = await Promise.all([
+  const [session, health, entries, water, weights, meds, doses, children, visits] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getFoodEntries(today),
@@ -43,7 +45,9 @@ export default async function TodayPage() {
     getMedications(),
     getDoses(today),
     getChildren(),
+    getVisits(),
   ]);
+  const soonVisits = upcomingVisits(visits, today, 7);
   const { profile, family, partner } = session;
   const doseItems = toDoseItems(meds, doses, today, children, session);
   const dosesLeft = doseItems.filter((d) => !d.takenLabel).length;
@@ -109,6 +113,24 @@ export default async function TodayPage() {
             <p className="py-1 text-sm text-muted">Добавьте витамины и лекарства по схеме врача — будем отмечать приём.</p>
           )}
         </Card>
+
+        {soonVisits.length > 0 && (
+          <Card>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Визиты на неделе</h2>
+              <Link href="/visits" className="text-sm font-medium text-accent">
+                Все →
+              </Link>
+            </div>
+            <ul className="flex flex-col divide-y divide-line">
+              {soonVisits.map((v) => (
+                <li key={v.id}>
+                  <VisitRow visit={v} who={v.child_id ? (children.find((c) => c.id === v.child_id)?.name ?? null) : null} />
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
 
         <DayTotalsCard totals={totals} target={target} href="/food" />
 
