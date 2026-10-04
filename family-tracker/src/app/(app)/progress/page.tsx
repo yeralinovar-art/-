@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { ComingSoon } from "@/components/ComingSoon";
 import { PageHeader } from "@/components/PageHeader";
+import { ProjectBars } from "@/components/ProjectBars";
 import { Card } from "@/components/ui";
+import { formatMinutes, periodRange, totalsByProject } from "@/lib/timetrack";
+import { getProjects, getTimeEntries } from "@/lib/timetrack-data";
 import { getDailyKcal, getHealthProfile, getWeights } from "@/lib/data";
 import {
   addDays,
@@ -19,11 +22,14 @@ export const metadata = { title: "Прогресс — Семья" };
 
 export default async function ProgressPage() {
   const today = todayKey();
-  const [{ profile }, health, weights, kcalDays] = await Promise.all([
+  const timeRange = periodRange("week", todayKey());
+  const [{ profile }, health, weights, kcalDays, projects, timeEntries] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getWeights(),
     getDailyKcal(addDays(today, -13)),
+    getProjects(true),
+    getTimeEntries(timeRange.from),
   ]);
 
   const points = movingAverage7(weights).map((p) => ({ date: p.date, kg: p.kg, avg: p.avg }));
@@ -40,6 +46,15 @@ export default async function ProgressPage() {
       return { date: addDays(start, week * 7), min: base + c.min, max: base + c.max, target: base + c.min };
     });
   }
+
+  const projectById = new Map(projects.map((p) => [p.id, p]));
+  // eslint-disable-next-line react-hooks/purity -- серверный рендер одного запроса
+  const projectTotals = totalsByProject(timeEntries, timeRange.from, timeRange.to, Date.now()).map((t) => ({
+    id: t.project_id,
+    name: projectById.get(t.project_id)?.name ?? "—",
+    slot: projectById.get(t.project_id)?.color_slot ?? 1,
+    minutes: t.minutes,
+  }));
 
   return (
     <>
@@ -70,12 +85,24 @@ export default async function ProgressPage() {
           <KcalChart days={kcalDays.sort((a, b) => a.date.localeCompare(b.date))} target={target?.kcal ?? null} />
         </Card>
 
-        <ComingSoon
-          items={[
-            { title: "Активность и тренировки", stage: 4 },
-            { title: "Время по проектам", stage: 4 },
-          ]}
-        />
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">Время по проектам за неделю</h2>
+            <Link href="/tasks/time" className="text-sm font-medium text-accent">
+              Подробнее →
+            </Link>
+          </div>
+          {projectTotals.length ? (
+            <>
+              <p className="text-sm text-muted">Всего {formatMinutes(projectTotals.reduce((s, t) => s + t.minutes, 0))}</p>
+              <ProjectBars items={projectTotals} />
+            </>
+          ) : (
+            <p className="text-sm text-muted">Запустите таймер в «Делах → Время» — здесь появится отчёт.</p>
+          )}
+        </Card>
+
+        <ComingSoon items={[{ title: "Активность и тренировки", stage: 4 }]} />
       </div>
     </>
   );

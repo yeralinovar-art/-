@@ -6,7 +6,7 @@ import type { Chore, Habit, Task } from "@/lib/tasks";
 
 // Задачи (свои + общие), планы, привычки, цели и дела семьи. Доступ ограничивает RLS.
 
-const TASK_COLUMNS = "id, owner_id, shared, assignee_id, plan_id, title, note, due_date, priority, status, done_at, done_by, created_at";
+const TASK_COLUMNS = "id, owner_id, shared, assignee_id, plan_id, project_id, title, note, due_date, priority, status, done_at, done_by, created_at";
 
 /** Открытые задачи и выполненные за последнюю неделю. */
 export const getTasks = cache(async (today: string): Promise<Task[]> => {

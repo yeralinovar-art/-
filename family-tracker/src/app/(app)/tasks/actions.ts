@@ -48,6 +48,7 @@ export async function saveTask(_prev: FormMessageState, formData: FormData): Pro
     shared,
     assignee_id: assignee,
     plan_id: shared ? planId || null : null,
+    project_id: shared ? null : str(formData, "project_id") || null,
   };
 
   const supabase = await createClient();
