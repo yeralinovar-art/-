@@ -30,6 +30,14 @@
 - Время и даты — по Алматы (UTC+5).
 - База: таблицы `families` и `profiles` с RLS. Партнёр видит только ваше имя и аватар.
 
+## Где что развёрнуто
+
+| Сервис | Что | Где найти |
+|---|---|---|
+| Supabase | проект `semya`, регион Frankfurt (`eu-central-1`), ref `wfkhluielhjnnrbbocaz` | supabase.com → Projects → semya |
+| Vercel | проект `semya`, Root Directory `family-tracker`, деплой из `main` | vercel.com → semya |
+| Vercel | лендинг психолога — отдельный проект `nailya_psy`, папку приложения не публикует (`/.vercelignore`) | vercel.com → nailya_psy |
+
 ---
 
 ## Что нужно сделать вам (один раз)
