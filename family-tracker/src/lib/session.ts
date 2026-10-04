@@ -27,38 +27,37 @@ export type Session = {
 /** Текущий пользователь, его семья и партнёр. Кэшируется на время одного запроса. */
 export const getSession = cache(async (): Promise<Session | null> => {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return null;
+  // getClaims проверяет подпись токена локально, без похода на сервер Supabase.
+  const { data: auth } = await supabase.auth.getClaims();
+  const claims = auth?.claims;
+  if (!claims?.sub) return null;
 
-  const { data: profile } = await supabase
+  // Один запрос вместо трёх: RLS отдаёт только мой профиль и профиль партнёра,
+  // семья подтягивается через внешний ключ family_id.
+  const { data: rows } = await supabase
     .from("profiles")
-    .select("id, family_id, display_name, avatar_emoji")
-    .eq("id", user.id)
-    .single<Profile>();
-  if (!profile) return null;
+    .select("id, family_id, display_name, avatar_emoji, families(id, name, invite_code)")
+    .returns<(Profile & { families: Family | null })[]>();
 
-  let family: Family | null = null;
-  let partner: Profile | null = null;
-  if (profile.family_id) {
-    const [familyRes, partnerRes] = await Promise.all([
-      supabase
-        .from("families")
-        .select("id, name, invite_code")
-        .eq("id", profile.family_id)
-        .single<Family>(),
-      supabase
-        .from("profiles")
-        .select("id, family_id, display_name, avatar_emoji")
-        .eq("family_id", profile.family_id)
-        .neq("id", user.id)
-        .maybeSingle<Profile>(),
-    ]);
-    family = familyRes.data;
-    partner = partnerRes.data;
-  }
+  const toProfile = (r: Profile & { families: Family | null }): Profile => ({
+    id: r.id,
+    family_id: r.family_id,
+    display_name: r.display_name,
+    avatar_emoji: r.avatar_emoji,
+  });
+  const mine = rows?.find((r) => r.id === claims.sub);
+  if (!mine) return null;
+  const partnerRow = mine.family_id
+    ? rows?.find((r) => r.id !== claims.sub && r.family_id === mine.family_id)
+    : undefined;
 
-  return { userId: user.id, email: user.email ?? "", profile, family, partner };
+  return {
+    userId: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : "",
+    profile: toProfile(mine),
+    family: mine.family_id ? mine.families : null,
+    partner: partnerRow ? toProfile(partnerRow) : null,
+  };
 });
 
 /** Для экранов приложения: нужен вход и семья. */
