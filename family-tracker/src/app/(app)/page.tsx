@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { Baby, ChevronRight, HeartPulse, Scale } from "lucide-react";
+import { Baby, ChevronRight, HeartPulse, Pill, Scale } from "lucide-react";
+import { CaffeineCard } from "@/components/CaffeineCard";
 import { ComingSoon } from "@/components/ComingSoon";
 import { DayTotalsCard } from "@/components/DayTotalsCard";
 import { DoctorNote } from "@/components/DoctorNote";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, FamilyBadge } from "@/components/ui";
 import { WaterCard } from "@/components/WaterCard";
+import { DoseList } from "@/components/DoseList";
 import { getFoodEntries, getHealthProfile, getWater, getWeights, sumEntries } from "@/lib/data";
+import { toDoseItems } from "@/lib/dose-items";
+import { getChildren, getDoses, getMedications } from "@/lib/meds-data";
 import {
   addDays,
   dailyKcalTarget,
@@ -30,13 +34,19 @@ function weeksWord(n: number) {
 
 export default async function TodayPage() {
   const today = todayKey();
-  const [{ profile, family, partner }, health, entries, water, weights] = await Promise.all([
+  const [session, health, entries, water, weights, meds, doses, children] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getFoodEntries(today),
     getWater(today),
     getWeights(addDays(today, -60)),
+    getMedications(),
+    getDoses(today),
+    getChildren(),
   ]);
+  const { profile, family, partner } = session;
+  const doseItems = toDoseItems(meds, doses, today, children, session);
+  const dosesLeft = doseItems.filter((d) => !d.takenLabel).length;
 
   const last = weights.at(-1) ?? null;
   const totals = sumEntries(entries);
@@ -83,6 +93,23 @@ export default async function TodayPage() {
           </Card>
         )}
 
+        <Card>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Pill className="size-5 text-accent" aria-hidden />
+              Витамины
+            </h2>
+            <Link href="/meds" className="text-sm font-medium text-accent">
+              {doseItems.length ? (dosesLeft ? `осталось ${dosesLeft}` : "всё принято ✓") : "Настроить"} →
+            </Link>
+          </div>
+          {doseItems.length > 0 ? (
+            <DoseList items={doseItems} date={today} />
+          ) : (
+            <p className="py-1 text-sm text-muted">Добавьте витамины и лекарства по схеме врача — будем отмечать приём.</p>
+          )}
+        </Card>
+
         <DayTotalsCard totals={totals} target={target} href="/food" />
 
         <Link href="/weight" className="block active:opacity-90">
@@ -123,6 +150,8 @@ export default async function TodayPage() {
 
         <WaterCard ml={water} goal={health.water_goal_ml} date={today} />
 
+        {preg && <CaffeineCard mg={totals.caffeine} limit={health.caffeine_limit_mg} date={today} />}
+
         <Card className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="mb-1 flex items-center gap-2">
@@ -146,7 +175,6 @@ export default async function TodayPage() {
 
         <ComingSoon
           items={[
-            { title: "Витамины по расписанию", stage: 2 },
             { title: "Задачи на сегодня и привычки", stage: 4 },
             { title: "Цитата дня", stage: 4, shared: true },
             { title: "Мини-тренировка дня", stage: 4, shared: true },

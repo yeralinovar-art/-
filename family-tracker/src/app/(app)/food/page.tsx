@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Coffee, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { CaffeineCard } from "@/components/CaffeineCard";
 import { DayTotalsCard } from "@/components/DayTotalsCard";
 import { PageHeader } from "@/components/PageHeader";
-import { Card, ProgressBar } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { WaterCard } from "@/components/WaterCard";
 import { MEALS, getFoodEntries, getHealthProfile, getLatestWeight, getWater, sumEntries } from "@/lib/data";
 import { isDate } from "@/lib/form";
@@ -86,7 +87,7 @@ export default async function FoodPage({ searchParams }: PageProps<"/food">) {
                       <div className="min-w-0">
                         <p className="truncate">{e.name}</p>
                         <p className="text-xs text-muted">
-                          {e.grams ? `${e.grams.toLocaleString("ru-RU")} г · ` : ""}
+                          {e.grams ? `${e.grams.toLocaleString("ru-RU")} ${e.unit} · ` : ""}
                           {Math.round(e.kcal)} ккал · Б {Math.round(e.protein)} · Ж {Math.round(e.fat)} · У {Math.round(e.carbs)}
                         </p>
                       </div>
@@ -106,18 +107,7 @@ export default async function FoodPage({ searchParams }: PageProps<"/food">) {
 
         <WaterCard ml={water} goal={health.water_goal_ml} date={date} />
 
-        {health.is_pregnant && (
-          <Card className="flex flex-col gap-2">
-            <h2 className="flex items-center gap-2 font-semibold">
-              <Coffee className="size-5 text-family" aria-hidden />
-              Кофеин
-              <span className="ml-auto text-sm font-normal text-muted">
-                {Math.round(totals.caffeine)} из {health.caffeine_limit_mg} мг
-              </span>
-            </h2>
-            <ProgressBar value={totals.caffeine} max={health.caffeine_limit_mg} tone={totals.caffeine > health.caffeine_limit_mg ? "danger" : "family"} />
-          </Card>
-        )}
+        {health.is_pregnant && <CaffeineCard mg={totals.caffeine} limit={health.caffeine_limit_mg} date={date} />}
       </div>
     </>
   );

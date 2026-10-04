@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Apple, Droplet, Plus, Scale, X } from "lucide-react";
+import { Apple, Droplet, Pill, Plus, Scale, X } from "lucide-react";
 import { addWater } from "@/app/(app)/food/actions";
 
 // Быстрый ввод с любого экрана — только то, что уже работает.
@@ -47,7 +47,7 @@ export function QuickAdd() {
                 <X className="size-5" aria-hidden />
               </button>
             </div>
-            <ul className="grid grid-cols-3 gap-3 pb-4">
+            <ul className="grid grid-cols-2 gap-3 pb-4">
               <li>
                 <Link href="/food/add" onClick={close} className={tile}>
                   <Apple className="size-7 text-accent" aria-hidden />
@@ -58,6 +58,12 @@ export function QuickAdd() {
                 <Link href="/weight" onClick={close} className={tile}>
                   <Scale className="size-7 text-accent" aria-hidden />
                   <span className="text-sm font-medium">Вес</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/meds" onClick={close} className={tile}>
+                  <Pill className="size-7 text-accent" aria-hidden />
+                  <span className="text-sm font-medium">Витамины</span>
                 </Link>
               </li>
               <li>
