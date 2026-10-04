@@ -14,8 +14,19 @@ const BASIS: Record<KcalTarget["basis"], string> = {
 };
 
 /** Итоги дня: съедено / норма / осталось и БЖУ. */
-export function DayTotalsCard({ totals, target, href }: { totals: DayTotals; target: KcalTarget | null; href?: string }) {
-  const left = target ? target.kcal - totals.kcal : null;
+export function DayTotalsCard({
+  totals,
+  target,
+  href,
+  burned = 0,
+}: {
+  totals: DayTotals;
+  target: KcalTarget | null;
+  href?: string;
+  /** Сожжено за день — добавляется к остатку. */
+  burned?: number;
+}) {
+  const left = target ? target.kcal + burned - totals.kcal : null;
   const macros = target ? macroTargets(target.kcal) : null;
 
   const body = (
@@ -36,7 +47,12 @@ export function DayTotalsCard({ totals, target, href }: { totals: DayTotals; tar
           <p className="text-xs text-muted">{left !== null && left < 0 ? "сверх нормы" : "осталось"}</p>
         </div>
       </div>
-      {target && <ProgressBar value={totals.kcal} max={target.kcal} tone={left !== null && left < 0 ? "danger" : "accent"} />}
+      {target && <ProgressBar value={totals.kcal} max={target.kcal + burned} tone={left !== null && left < 0 ? "danger" : "accent"} />}
+      {burned > 0 && (
+        <p className="text-xs text-muted">
+          + {r0(burned)} ккал сожжено за день — добавлено к остатку
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-3 text-sm">
         {(
           [

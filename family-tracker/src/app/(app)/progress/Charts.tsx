@@ -276,3 +276,47 @@ export function KcalChart({ days, target }: { days: { date: string; kcal: number
     </div>
   );
 }
+
+/** Активность: минуты тренировок по дням за 2 недели (одна серия). */
+export function ActivityChart({ days }: { days: { date: string; minutes: number; kcal: number }[] }) {
+  const data = days.map((d) => ({ t: ts(d.date), minutes: d.minutes, kcal: d.kcal }));
+  const total = data.reduce((s, d) => s + d.minutes, 0);
+  if (!total) return <p className="py-8 text-center text-sm text-muted">Пока нет тренировок за две недели.</p>;
+  const max = Math.max(...data.map((d) => d.minutes));
+  const step = max > 120 ? 60 : max > 60 ? 30 : 15;
+  const top = Math.ceil((max * 1.1) / step) * step;
+  const ticks = Array.from({ length: Math.floor(top / step) + 1 }, (_, i) => i * step);
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-muted">
+        Всего <span className="font-semibold text-text">{total.toLocaleString("ru-RU")} мин</span> за 2 недели
+      </p>
+      <div className="h-48 w-full" role="img" aria-label="Минуты тренировок по дням">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+            <CartesianGrid stroke={C.grid} vertical={false} />
+            <XAxis dataKey="t" tickFormatter={dayLabel} tick={{ fill: C.text, fontSize: 12 }} tickLine={false} axisLine={{ stroke: C.grid }} minTickGap={16} />
+            <YAxis domain={[0, top]} ticks={ticks} tick={{ fill: C.text, fontSize: 12 }} tickLine={false} axisLine={false} width={40} />
+            <Bar dataKey="minutes" fill={C.series} radius={[4, 4, 0, 0]} maxBarSize={24} isAnimationActive={false} />
+            <Tooltip
+              cursor={{ fill: C.band }}
+              content={({ active, payload }) => {
+                const row = payload?.[0]?.payload as { t: number; minutes: number; kcal: number } | undefined;
+                if (!active || !row) return null;
+                return (
+                  <TooltipBox
+                    title={dayLabel(row.t)}
+                    rows={[
+                      ["Тренировки", `${row.minutes} мин`],
+                      ["Сожжено", `${row.kcal.toLocaleString("ru-RU")} ккал`],
+                    ]}
+                  />
+                );
+              }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
