@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Baby, ChevronRight, HeartPulse, Pill, Scale } from "lucide-react";
+import { Baby, ChevronRight, HeartPulse, Pill, Scale, UtensilsCrossed } from "lucide-react";
 import { CaffeineCard } from "@/components/CaffeineCard";
 import { ComingSoon } from "@/components/ComingSoon";
 import { DayTotalsCard } from "@/components/DayTotalsCard";
@@ -13,6 +13,7 @@ import { toDoseItems } from "@/lib/dose-items";
 import { VisitRow } from "@/components/VisitRow";
 import { upcomingVisits } from "@/lib/family-health";
 import { getChildren, getDoses, getMedications, getVisits } from "@/lib/meds-data";
+import { getPlan } from "@/lib/menu-data";
 import {
   addDays,
   dailyKcalTarget,
@@ -25,6 +26,7 @@ import { requireFamilySession } from "@/lib/session";
 import { formatLongDate, greeting, todayKey } from "@/lib/time";
 
 const TRIMESTER = ["", "I", "II", "III"];
+const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"];
 
 function weeksWord(n: number) {
   const m10 = n % 10;
@@ -36,7 +38,7 @@ function weeksWord(n: number) {
 
 export default async function TodayPage() {
   const today = todayKey();
-  const [session, health, entries, water, weights, meds, doses, children, visits] = await Promise.all([
+  const [session, health, entries, water, weights, meds, doses, children, visits, menu] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getFoodEntries(today),
@@ -46,6 +48,7 @@ export default async function TodayPage() {
     getDoses(today),
     getChildren(),
     getVisits(),
+    getPlan(today, today),
   ]);
   const soonVisits = upcomingVisits(visits, today, 7);
   const { profile, family, partner } = session;
@@ -133,6 +136,23 @@ export default async function TodayPage() {
         )}
 
         <DayTotalsCard totals={totals} target={target} href="/food" />
+
+        <Link href={`/menu#d-${today}`} className="block active:opacity-90">
+          <Card className="flex items-center gap-3">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-family-soft text-family">
+              <UtensilsCrossed className="size-6" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-semibold">Сегодня в меню</h2>
+              <p className="truncate text-sm text-muted">
+                {menu.length
+                  ? [...menu].sort((a, b) => MEAL_ORDER.indexOf(a.meal) - MEAL_ORDER.indexOf(b.meal)).map((m) => m.title).join(" · ")
+                  : "Ничего не запланировано — добавьте блюда на неделю"}
+              </p>
+            </div>
+            <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+          </Card>
+        </Link>
 
         <Link href="/weight" className="block active:opacity-90">
           <Card className="flex items-center gap-3">

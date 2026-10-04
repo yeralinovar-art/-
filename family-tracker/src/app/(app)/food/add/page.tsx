@@ -12,6 +12,7 @@ export default async function AddFoodPage({ searchParams }: PageProps<"/food/add
   const params = await searchParams;
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "2-digit", hour12: false }).format(new Date()));
   const meal = isMeal(params.meal) ? params.meal : mealByHour(hour);
+  const q = typeof params.q === "string" ? params.q.slice(0, 60) : "";
   const date = typeof params.date === "string" && isDate(params.date) ? params.date : todayKey();
 
   const [, health, recent] = await Promise.all([requireFamilySession(), getHealthProfile(), getRecentFoods()]);
@@ -28,7 +29,7 @@ export default async function AddFoodPage({ searchParams }: PageProps<"/food/add
         </Link>
         <h1 className="text-2xl font-bold">Добавить еду</h1>
       </header>
-      <AddFood meal={meal} date={date} pregnant={health.is_pregnant} recent={recent} />
+      <AddFood meal={meal} date={date} pregnant={health.is_pregnant} recent={recent} initialQuery={q} />
     </>
   );
 }
