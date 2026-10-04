@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Baby, ChevronRight, HeartPulse, Pill, Scale, UtensilsCrossed } from "lucide-react";
+import { Baby, BellRing, CheckSquare, ChevronRight, HeartPulse, Pill, Repeat, Scale, UtensilsCrossed } from "lucide-react";
 import { CaffeineCard } from "@/components/CaffeineCard";
 import { ComingSoon } from "@/components/ComingSoon";
 import { DayTotalsCard } from "@/components/DayTotalsCard";
@@ -14,6 +14,12 @@ import { VisitRow } from "@/components/VisitRow";
 import { upcomingVisits } from "@/lib/family-health";
 import { getChildren, getDoses, getMedications, getVisits } from "@/lib/meds-data";
 import { getPlan } from "@/lib/menu-data";
+import { HabitList } from "@/components/HabitList";
+import { TaskList } from "@/components/TaskList";
+import { weekStartOf } from "@/lib/menu";
+import { toTaskItems } from "@/lib/task-items";
+import { countInWeek, everyLabel, habitStreak, inView, sortTasks, streakLabel } from "@/lib/tasks";
+import { getChores, getHabits, getTasks } from "@/lib/tasks-data";
 import {
   addDays,
   dailyKcalTarget,
@@ -38,7 +44,7 @@ function weeksWord(n: number) {
 
 export default async function TodayPage() {
   const today = todayKey();
-  const [session, health, entries, water, weights, meds, doses, children, visits, menu] = await Promise.all([
+  const [session, health, entries, water, weights, meds, doses, children, visits, menu, tasks, habitData, chores] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getFoodEntries(today),
@@ -49,8 +55,43 @@ export default async function TodayPage() {
     getChildren(),
     getVisits(),
     getPlan(today, today),
+    getTasks(today),
+    getHabits(today),
+    getChores(),
   ]);
   const soonVisits = upcomingVisits(visits, today, 7);
+  const todayTasks = sortTasks(
+    tasks.filter((t) => inView(t, "today", today) && (!t.shared || !t.assignee_id || t.assignee_id === session.userId)),
+  );
+  const week = weekStartOf(today);
+  const habitItems = habitData.habits.map((h) => {
+    const dates = habitData.checks.get(h.id) ?? new Set<string>();
+    const streak = habitStreak(h, dates, today);
+    return {
+      id: h.id,
+      title: h.title,
+      emoji: h.emoji,
+      checked: dates.has(today),
+      hint:
+        h.frequency === "daily"
+          ? streakLabel(streak, "daily")
+          : `${countInWeek(dates, week)} из ${h.target_per_week} на неделе`,
+    };
+  });
+  const dueChores = chores.filter((c) => c.next_due <= today && (!c.assignee_id || c.assignee_id === session.userId));
+  // Что сделал или поручил партнёр — пока без push-уведомлений (этап 7).
+  const partnerId = session.partner?.id;
+  const since = Date.parse(`${addDays(today, -3)}T00:00:00+05:00`);
+  const news = partnerId
+    ? [
+        ...tasks
+          .filter((t) => t.shared && t.owner_id === partnerId && t.assignee_id === session.userId && t.status !== "done" && Date.parse(t.created_at) >= since)
+          .map((t) => ({ id: t.id, text: `поручил(а) вам: ${t.title}` })),
+        ...tasks
+          .filter((t) => t.shared && t.done_by === partnerId && Date.parse(t.done_at ?? "") >= Date.parse(`${today}T00:00:00+05:00`))
+          .map((t) => ({ id: `d-${t.id}`, text: `сделал(а): ${t.title}` })),
+      ].slice(0, 5)
+    : [];
   const { profile, family, partner } = session;
   const doseItems = toDoseItems(meds, doses, today, children, session);
   const dosesLeft = doseItems.filter((d) => !d.takenLabel).length;
@@ -135,6 +176,72 @@ export default async function TodayPage() {
           </Card>
         )}
 
+        {news.length > 0 && session.partner && (
+          <Card className="flex flex-col gap-1 bg-family-soft">
+            <h2 className="flex items-center gap-2 font-semibold text-family">
+              <BellRing className="size-5" aria-hidden />
+              {session.partner.avatar_emoji} {session.partner.display_name}
+            </h2>
+            <ul className="text-sm">
+              {news.map((n) => (
+                <li key={n.id}>{n.text}</li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
+        <Card>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <CheckSquare className="size-5 text-accent" aria-hidden />
+              Задачи на сегодня
+            </h2>
+            <Link href="/tasks" className="text-sm font-medium text-accent">
+              Все →
+            </Link>
+          </div>
+          {todayTasks.length ? (
+            <TaskList items={toTaskItems(todayTasks.slice(0, 6), session, today)} back="/" />
+          ) : (
+            <p className="py-1 text-sm text-muted">
+              На сегодня ничего.{" "}
+              <Link href="/tasks/new?back=%2F" className="font-medium text-accent">
+                Добавить задачу
+              </Link>
+            </p>
+          )}
+          {todayTasks.length > 6 && <p className="pt-1 text-xs text-muted">и ещё {todayTasks.length - 6}</p>}
+        </Card>
+
+        {habitItems.length > 0 && (
+          <Card>
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="font-semibold">Привычки</h2>
+              <Link href="/tasks/habits" className="text-sm font-medium text-accent">
+                {habitItems.filter((h) => h.checked).length} из {habitItems.length} →
+              </Link>
+            </div>
+            <HabitList items={habitItems} date={today} />
+          </Card>
+        )}
+
+        {dueChores.length > 0 && (
+          <Link href="/tasks/family" className="block active:opacity-90">
+            <Card className="flex items-center gap-3">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-family-soft text-family">
+                <Repeat className="size-6" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold">Домашние дела</h2>
+                <p className="truncate text-sm text-muted">
+                  {dueChores.map((c) => `${c.emoji} ${c.title}`).join(" · ")} — ваша очередь ({everyLabel(dueChores[0].every_days)})
+                </p>
+              </div>
+              <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+            </Card>
+          </Link>
+        )}
+
         <DayTotalsCard totals={totals} target={target} href="/food" />
 
         <Link href={`/menu#d-${today}`} className="block active:opacity-90">
@@ -217,7 +324,6 @@ export default async function TodayPage() {
 
         <ComingSoon
           items={[
-            { title: "Задачи на сегодня и привычки", stage: 4 },
             { title: "Цитата дня", stage: 4, shared: true },
             { title: "Мини-тренировка дня", stage: 4, shared: true },
             { title: "Таймер чтения", stage: 4 },
