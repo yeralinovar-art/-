@@ -11,6 +11,7 @@ export type Task = {
   shared: boolean;
   assignee_id: string | null;
   plan_id: string | null;
+  project_id?: string | null;
   title: string;
   note: string | null;
   due_date: string | null;

@@ -46,6 +46,7 @@ export function TaskForm({
   back,
   planId,
   defaultShared = false,
+  projects = [],
 }: {
   task?: Task | null;
   me: string;
@@ -53,6 +54,7 @@ export function TaskForm({
   back: string;
   planId?: string | null;
   defaultShared?: boolean;
+  projects?: { id: string; name: string }[];
 }) {
   const [state, action] = useActionState<FormMessageState, FormData>(saveTask, {});
   const inPlan = Boolean(planId ?? task?.plan_id);
@@ -99,6 +101,27 @@ export function TaskForm({
         />
       )}
       {kind === "shared" && !partnerName && <p className="text-xs text-muted">Партнёр ещё не присоединился — задачу увидит, когда войдёт в семью.</p>}
+
+      {kind === "personal" && projects.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="task-project" className="text-sm font-medium text-muted">
+            Проект
+          </label>
+          <select
+            id="task-project"
+            name="project_id"
+            defaultValue={task?.project_id ?? ""}
+            className="min-h-12 rounded-2xl border border-line bg-card px-4 outline-none transition focus:border-accent"
+          >
+            <option value="">Без проекта</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <TextField label="Срок" name="due_date" type="date" defaultValue={task?.due_date ?? ""} />
 

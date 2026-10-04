@@ -20,6 +20,10 @@ import { weekStartOf } from "@/lib/menu";
 import { toTaskItems } from "@/lib/task-items";
 import { countInWeek, everyLabel, habitStreak, inView, sortTasks, streakLabel } from "@/lib/tasks";
 import { getChores, getHabits, getTasks } from "@/lib/tasks-data";
+import { ReadingCard } from "@/components/ReadingCard";
+import { TimerCard } from "@/components/TimerCard";
+import { readingByDay, readingStreak } from "@/lib/timetrack";
+import { getBooks, getProjects, getReading, getReadingGoal, getRunningTimer } from "@/lib/timetrack-data";
 import {
   addDays,
   dailyKcalTarget,
@@ -44,7 +48,7 @@ function weeksWord(n: number) {
 
 export default async function TodayPage() {
   const today = todayKey();
-  const [session, health, entries, water, weights, meds, doses, children, visits, menu, tasks, habitData, chores] = await Promise.all([
+  const [session, health, entries, water, weights, meds, doses, children, visits, menu, tasks, habitData, chores, projects, timer, reading, books] = await Promise.all([
     requireFamilySession(),
     getHealthProfile(),
     getFoodEntries(today),
@@ -58,7 +62,15 @@ export default async function TodayPage() {
     getTasks(today),
     getHabits(today),
     getChores(),
+    getProjects(),
+    getRunningTimer(),
+    getReading(today),
+    getBooks(),
   ]);
+  const readingGoal = await getReadingGoal(session.userId);
+  const readDays = readingByDay(reading.sessions);
+  // eslint-disable-next-line react-hooks/purity -- серверный рендер одного запроса
+  const now = Date.now();
   const soonVisits = upcomingVisits(visits, today, 7);
   const todayTasks = sortTasks(
     tasks.filter((t) => inView(t, "today", today) && (!t.shared || !t.assignee_id || t.assignee_id === session.userId)),
@@ -225,6 +237,18 @@ export default async function TodayPage() {
           </Card>
         )}
 
+        {(timer || projects.length > 0) && <TimerCard projects={projects} running={timer} serverNow={now} compact />}
+
+        <ReadingCard
+          minutesToday={readDays.get(today) ?? 0}
+          goal={readingGoal}
+          streak={readingStreak(readDays, readingGoal, today)}
+          running={reading.running}
+          books={books.filter((b) => b.status === "reading")}
+          serverNow={now}
+          link
+        />
+
         {dueChores.length > 0 && (
           <Link href="/tasks/family" className="block active:opacity-90">
             <Card className="flex items-center gap-3">
@@ -326,7 +350,6 @@ export default async function TodayPage() {
           items={[
             { title: "Цитата дня", stage: 4, shared: true },
             { title: "Мини-тренировка дня", stage: 4, shared: true },
-            { title: "Таймер чтения", stage: 4 },
             { title: "Шаги и события календаря", stage: 6 },
           ]}
         />

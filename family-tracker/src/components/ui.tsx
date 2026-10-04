@@ -2,7 +2,7 @@
 
 import { Users } from "lucide-react";
 import { useFormStatus } from "react-dom";
-import type { ComponentProps, ReactNode } from "react";
+import { useId, type ComponentProps, type ReactNode } from "react";
 
 export function SubmitButton({
   children,
@@ -76,12 +76,19 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 export function SelectField({
   label,
   options,
+  id,
   ...props
 }: ComponentProps<"select"> & { label: string; options: { value: string; label: string }[] }) {
+  // Подпись связана через id, а не обёрткой: иначе в имя поля попадают все варианты.
+  const autoId = useId();
+  const selectId = id ?? autoId;
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-muted">{label}</span>
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={selectId} className="text-sm font-medium text-muted">
+        {label}
+      </label>
       <select
+        id={selectId}
         className="min-h-12 rounded-2xl border border-line bg-card px-4 outline-none transition focus:border-accent"
         {...props}
       >
@@ -91,7 +98,7 @@ export function SelectField({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
 
