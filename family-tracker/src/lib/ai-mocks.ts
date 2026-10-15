@@ -24,12 +24,6 @@ export const MOCKS = {
     ],
     comment: null,
   },
-  food_photo: {
-    items: [
-      { name: "Суши с лососем", grams: 200, unit: "г", kcal: 300, protein: 14, fat: 7, carbs: 45, caffeine_mg: 0, pregnancy_note: "Сырая рыба — при беременности лучше избегать" },
-    ],
-    comment: "Порция оценена по фото примерно",
-  },
   menu: {
     dishes: [
       dish("oat", "Овсянка с яблоком", 320, [ing("Овсяные хлопья", 180, "г", "Бакалея"), ing("Яблоко", 2, "шт", "Овощи и фрукты"), ing("Молоко", 600, "мл", "Молочное и яйца")]),
