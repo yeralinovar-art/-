@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Baby, BellRing, CheckSquare, ChevronRight, HeartPulse, Pill, Repeat, Scale, UtensilsCrossed } from "lucide-react";
 import { CaffeineCard } from "@/components/CaffeineCard";
-import { ComingSoon } from "@/components/ComingSoon";
+import { CalendarCard } from "@/components/CalendarCard";
 import { DayTotalsCard } from "@/components/DayTotalsCard";
 import { DoctorNote } from "@/components/DoctorNote";
 import { PageHeader } from "@/components/PageHeader";
@@ -176,6 +177,10 @@ export default async function TodayPage() {
         )}
 
         {quote && <QuoteCard id={quote.id} text={quote.text} author={quote.author} favorite={favs.has(quote.id)} />}
+
+        <Suspense fallback={null}>
+          <CalendarCard today={today} />
+        </Suspense>
 
         <Card>
           <div className="mb-1 flex items-center justify-between">
@@ -381,11 +386,6 @@ export default async function TodayPage() {
           )}
         </Card>
 
-        <ComingSoon
-          items={[
-            { title: "Шаги с iPhone и события календаря", stage: 6 },
-          ]}
-        />
       </div>
     </>
   );
