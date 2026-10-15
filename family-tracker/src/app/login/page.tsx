@@ -3,6 +3,7 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getSession } from "@/lib/session";
 import { AuthForm } from "./AuthForm";
+import { NewPassword } from "./NewPassword";
 
 export const metadata = { title: "Вход — Семья" };
 
@@ -17,7 +18,13 @@ export default async function LoginPage() {
         <h1 className="text-3xl font-bold tracking-tight">Семья</h1>
         <p className="text-muted">Меню, питание, вес и дела — для нас двоих</p>
       </header>
-      {isSupabaseConfigured ? <AuthForm /> : <SetupNotice />}
+      {isSupabaseConfigured ? (
+        <NewPassword>
+          <AuthForm />
+        </NewPassword>
+      ) : (
+        <SetupNotice />
+      )}
     </main>
   );
 }
