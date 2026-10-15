@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ChevronRight, HeartPulse, LogOut, PlusSquare, Share } from "lucide-react";
+import { Activity, CalendarDays, ChevronRight, HeartPulse, LogOut, PlusSquare, Share } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, FamilyBadge } from "@/components/ui";
@@ -56,6 +56,17 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
             <div className="min-w-0 flex-1">
               <h2 className="font-semibold">Apple Health</h2>
               <p className="text-sm text-muted">Шаги, калории и вес с iPhone — каждый вечер сами.</p>
+            </div>
+            <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+          </Card>
+        </Link>
+
+        <Link href="/profile/calendar" className="block active:opacity-90">
+          <Card className="flex items-center gap-3">
+            <CalendarDays className="size-6 shrink-0 text-accent" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <h2 className="font-semibold">Календарь</h2>
+              <p className="text-sm text-muted">Дела — в календарь iPhone или Google, события Google — на «Сегодня».</p>
             </div>
             <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
           </Card>
