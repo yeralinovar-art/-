@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Camera, Sparkles, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { DoctorNote } from "@/components/DoctorNote";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { rescaleFoodItem, type FoodEstimateItem } from "@/lib/ai-schemas";
@@ -10,20 +10,8 @@ import { addEstimatedFood, estimateFood, type EstimateState } from "../ai-action
 
 const fmt = (n: number) => n.toLocaleString("ru-RU", { maximumFractionDigits: 1 });
 
-/** Сжимаем фото на телефоне: длинная сторона до 1024 px, JPEG. */
-async function compress(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.8);
-}
-
 export function AiTab({ meal, date, enabled }: { meal: Meal; date: string; enabled: boolean }) {
   const [state, action] = useActionState<EstimateState, FormData>(estimateFood, {});
-  const [photo, setPhoto] = useState<string | null>(null);
 
   if (!enabled) {
     return (
@@ -39,41 +27,11 @@ export function AiTab({ meal, date, enabled }: { meal: Meal; date: string; enabl
         <textarea
           name="text"
           aria-label="Что съели"
+          required
           placeholder="Например: плов 250 г, салат из помидоров, чай с молоком и 2 баурсака"
           maxLength={1000}
           className="min-h-24 rounded-2xl border border-line bg-card px-4 py-3 outline-none focus:border-accent"
         />
-        <input type="hidden" name="photo" value={photo ?? ""} />
-        {photo ? (
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element -- локальный предпросмотр */}
-            <img src={photo} alt="Фото тарелки" className="max-h-56 w-full rounded-2xl object-cover" />
-            <button
-              type="button"
-              onClick={() => setPhoto(null)}
-              aria-label="Убрать фото"
-              className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-black/50 text-white"
-            >
-              <X className="size-5" aria-hidden />
-            </button>
-          </div>
-        ) : (
-          <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line text-sm text-muted">
-            <Camera className="size-5" aria-hidden />
-            Сфотографировать тарелку
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="sr-only"
-              aria-label="Фото еды"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (f) setPhoto(await compress(f));
-              }}
-            />
-          </label>
-        )}
         <SubmitButton pendingText="AI считает…">
           <span className="inline-flex items-center gap-2">
             <Sparkles className="size-5" aria-hidden />

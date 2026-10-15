@@ -12,34 +12,27 @@ import { todayKey } from "@/lib/time";
 
 export type EstimateState = { items?: FoodEstimateItem[]; comment?: string | null; error?: string };
 
-const SYSTEM = `Ты помогаешь семье в Казахстане вести дневник питания. По описанию или фото оцени, что съедено: раздели на отдельные блюда и напитки, для каждого — вес или объём порции и КБЖУ на всю порцию.
+const SYSTEM = `Ты помогаешь семье в Казахстане вести дневник питания. По описанию оцени, что съедено: раздели на отдельные блюда и напитки, для каждого — вес или объём порции и КБЖУ на всю порцию.
 Знай казахскую, узбекскую и русскую кухню (бешбармак, плов, лагман, манты, баурсаки, сорпа, куырдак и т. п.).
 Если вес не указан — бери типичную домашнюю порцию. Напитки — в миллилитрах, остальное — в граммах. Кофеин указывай для кофе, чая, колы, энергетиков и шоколада.
-Называй блюда коротко по-русски. Если на фото не еда или описание непонятно — верни пустой список и поясни в comment.`;
+Называй блюда коротко по-русски. Если описание непонятно или это не еда — верни пустой список и поясни в comment.`;
 
 const PREGNANT = `Пользовательница беременна. В pregnancy_note коротко отмечай то, что при беременности не рекомендуется или ограничено: алкоголь, сырая или недожаренная рыба и мясо (суши, тартар, стейк с кровью), сырые и всмятку яйца, непастеризованные сыры и молоко, рыба с высоким содержанием ртути (акула, рыба-меч, королевская макрель, крупный тунец), печень в больших количествах, кофеин сверх меры. Без медицинских советов — только факт. Для остальных блюд pregnancy_note = null.`;
 
-/** Оценка еды по тексту и/или фото — результат ещё не сохраняется, его подтверждает пользователь. */
+/** Оценка еды по описанию — результат ещё не сохраняется, его подтверждает пользователь. */
 export async function estimateFood(_prev: EstimateState, formData: FormData): Promise<EstimateState> {
   const session = await getSession();
   if (!session) return { error: "Нужно войти заново" };
   const text = str(formData, "text").slice(0, 1000);
-  const photo = str(formData, "photo");
-  if (!text && !photo) return { error: "Опишите, что съели, или добавьте фото" };
-  if (photo && (!photo.startsWith("data:image/jpeg;base64,") || photo.length > 3_500_000)) return { error: "Не получилось прочитать фото" };
+  if (!text) return { error: "Опишите, что съели" };
 
   const health = await getHealthProfile();
-  const content: Parameters<typeof askClaude>[0]["content"] = [];
-  if (photo) {
-    content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photo.slice("data:image/jpeg;base64,".length) } });
-  }
-  content.push({ type: "text", text: text ? `Что съедено: ${text}` : "Оцени, что на фото." });
 
   const result = await askClaude({
-    kind: photo ? "food_photo" : "food_text",
+    kind: "food_text",
     schema: FoodEstimateSchema,
     system: health.is_pregnant ? `${SYSTEM}\n\n${PREGNANT}` : `${SYSTEM}\npregnancy_note всегда null.`,
-    content,
+    content: [{ type: "text", text: `Что съедено: ${text}` }],
     effort: "low",
     maxTokens: 4000,
   });

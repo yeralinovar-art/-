@@ -63,7 +63,7 @@ export function AddFood({
         {(
           [
             ["search", "Поиск"],
-            ["ai", "✨ AI / фото"],
+            ["ai", "✨ AI"],
             ["quick", "Быстро"],
             ["own", "Своё блюдо"],
             ["barcode", "Штрихкод"],

@@ -5,7 +5,6 @@ import { distributeNutrition, FoodEstimateSchema, MenuSchema, planToRows, rescal
 
 test("тестовые ответы проходят схемы", () => {
   assert.ok(FoodEstimateSchema.parse(MOCKS.food_text));
-  assert.ok(FoodEstimateSchema.parse(MOCKS.food_photo));
   assert.ok(MenuSchema.parse(MOCKS.menu));
   assert.ok(SwapSchema.parse(MOCKS.swap));
 });

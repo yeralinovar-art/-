@@ -8,8 +8,8 @@ import { aiEnabled } from "@/lib/ai";
 import { AddFood } from "./AddFood";
 
 export const metadata = { title: "Добавить еду — Семья" };
-// AI-оценка по фото может занять до минуты.
-export const maxDuration = 120;
+// AI-оценка еды обычно занимает несколько секунд.
+export const maxDuration = 60;
 
 export default async function AddFoodPage({ searchParams }: PageProps<"/food/add">) {
   const params = await searchParams;

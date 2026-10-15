@@ -9,10 +9,10 @@ import { MOCKS } from "@/lib/ai-mocks";
 
 const MODEL = "claude-opus-5-5";
 
-export type AiKind = "food_text" | "food_photo" | "menu" | "swap";
+export type AiKind = "food_text" | "menu" | "swap";
 
 /** Сколько обращений в день на человека — защита от случайно большого счёта. */
-export const DAILY_LIMITS: Record<AiKind, number> = { food_text: 40, food_photo: 20, menu: 5, swap: 20 };
+export const DAILY_LIMITS: Record<AiKind, number> = { food_text: 40, menu: 5, swap: 20 };
 
 export type AiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
