@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { X } from "lucide-react";
 import { BackHeader } from "@/components/BackHeader";
 import { Card, ProgressBar } from "@/components/ui";
@@ -51,7 +52,12 @@ export default async function ActivityPage() {
         <Card>
           <h2 className="mb-3 font-semibold">Шаги сегодня</h2>
           <StepsForm today={today} steps={todaySteps?.steps ?? null} activeKcal={todaySteps?.active_kcal ?? null} />
-          <p className="mt-2 text-xs text-muted">Автоматически с iPhone — на этапе 6 (Apple Health через «Команды»).</p>
+          <p className="mt-2 text-xs text-muted">
+            Автоматически с iPhone:{" "}
+            <Link href="/profile/apple-health" className="font-medium text-accent underline">
+              подключить Apple Health
+            </Link>
+          </p>
         </Card>
 
         <Card>
