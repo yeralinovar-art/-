@@ -15,7 +15,7 @@
 | 4 | Проекты, таймер, задачи, привычки, общие планы, чтение, цитата и тренировка дня | ✅ готово |
 | 5 | AI (меню и калории через Claude API) | ✖ убран — платный API; приложение полностью бесплатное |
 | 6 | Импорт из Apple Health, календарь (подписка ICS + события Google на «Сегодня») | ✅ готово |
-| 7 | Push-напоминания, переключатель темы, офлайн-кэш | ⏳ |
+| 7 | Push-напоминания, переключатель темы, офлайн-просмотр | ✅ готово |
 
 ## Что сделано на этапе 1
 
@@ -113,7 +113,8 @@ npx supabase status          # покажет API URL и publishable key для 
 | `NEXT_PUBLIC_SUPABASE_URL` | браузер и сервер | нет |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (или `NEXT_PUBLIC_SUPABASE_ANON_KEY`) | браузер и сервер | нет — доступ ограничивает RLS |
 | `NEXT_PUBLIC_SITE_URL` | ссылки в письмах | нет |
-| `GOOGLE_*`, `VAPID_PRIVATE_KEY` | появятся на этапах 6–7, только сервер | **да** |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` | push-напоминания, публичные | нет |
+| `VAPID_PRIVATE_KEY` | push-напоминания, только сервер | **да** |
 
 ### Миграции
 
@@ -141,3 +142,16 @@ src/
 public/sw.js               service worker
 supabase/                  config.toml и миграции
 ```
+
+## Push-напоминания (этап 7)
+
+Бесплатно: Web Push (Apple/Google) + планировщик pg_cron в Supabase.
+
+1. Ключи: `npx web-push generate-vapid-keys` → в Vercel добавить `NEXT_PUBLIC_VAPID_PUBLIC_KEY`,
+   `VAPID_PRIVATE_KEY` (Sensitive) и `VAPID_SUBJECT` (адрес сайта), затем Redeploy.
+2. В Supabase → SQL Editor выполнить скрипт включения: функции из миграции
+   `20261015000015_push.sql`, хэш секрета в `app_secrets` (`name = 'push_cron'`) и задание pg_cron,
+   которое раз в 15 минут делает `net.http_post` на `/api/push/tick` с заголовком `x-push-secret`.
+   Сам секрет в репозиторий не кладём.
+3. На iPhone (iOS 16.4+) уведомления работают только в приложении, открытом с экрана «Домой»:
+   Профиль → Напоминания → «Включить уведомления».

@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 export type ProfileState = { message?: { type: "error" | "info"; text: string } };
 
@@ -32,4 +34,12 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
 
   revalidatePath("/", "layout");
   return { message: { type: "info", text: "Сохранено" } };
+}
+
+/** Оформление: cookie на год; сервер сразу отдаёт нужную тему. */
+export async function setTheme(theme: string) {
+  const value = parseTheme(theme);
+  const store = await cookies();
+  if (value === "system") store.delete(THEME_COOKIE);
+  else store.set(THEME_COOKIE, value, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: false });
 }

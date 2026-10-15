@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/BottomNav";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { QuickAdd } from "@/components/QuickAdd";
 import { SetupNotice } from "@/components/SetupNotice";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         className="pt-safe mx-auto max-w-md px-4"
         style={{ paddingBottom: "calc(9rem + env(safe-area-inset-bottom))" }}
       >
+        <OfflineBanner />
         {children}
       </main>
       <QuickAdd />

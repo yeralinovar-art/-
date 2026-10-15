@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Цвета приложения. Тёмная тема включается по настройке телефона. */
+/* Цвета приложения. */
 :root {
+  color-scheme: light;
   --bg: #f6f3ee;
   --card: #ffffff;
   --card-muted: #efeae2;
@@ -31,8 +32,10 @@
   --series-8: #e34948;
 }
 
+/* Тёмная тема: по настройке телефона или выбранная вручную (Профиль → Оформление). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #121412;
     --card: #1c1f1d;
     --card-muted: #262a27;
@@ -59,6 +62,35 @@
     --series-7: #9085e9;
     --series-8: #e66767;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121412;
+  --card: #1c1f1d;
+  --card-muted: #262a27;
+  --text: #eeebe6;
+  --muted: #9c978f;
+  --line: rgba(238, 235, 230, 0.1);
+  --accent: #5cc0a6;
+  --accent-soft: #1d3a33;
+  --accent-text: #0e1b17;
+  --family: #e59166;
+  --family-soft: #3b271d;
+  --danger: #ef7b74;
+  --nav-bg: rgba(28, 31, 29, 0.86);
+  --chart-1: #22a07f;
+  --chart-band: rgba(238, 235, 230, 0.08);
+  --chart-grid: rgba(238, 235, 230, 0.1);
+  --chart-ref: #9c978f;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
 }
 
 @theme inline {
