@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { Activity, CalendarDays, ChevronRight, HeartPulse, LogOut, PlusSquare, Share } from "lucide-react";
-import { signOut } from "@/app/login/actions";
+import { Activity, Bell, CalendarDays, ChevronRight, HeartPulse, PlusSquare, Share } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { SignOutButton } from "@/components/SignOutButton";
 import { Card, FamilyBadge } from "@/components/ui";
 import { requireFamilySession } from "@/lib/session";
+import { cookies } from "next/headers";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import { InviteCode } from "./InviteCode";
+import { ThemePicker } from "./ThemePicker";
 import { ProfileForm } from "./ProfileForm";
 
 export const metadata = { title: "Профиль — Семья" };
@@ -12,6 +15,7 @@ export const metadata = { title: "Профиль — Семья" };
 export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
   const { profile, family, partner, email } = await requireFamilySession();
   const { welcome } = await searchParams;
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
     <>
@@ -61,6 +65,17 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           </Card>
         </Link>
 
+        <Link href="/profile/notifications" className="block active:opacity-90">
+          <Card className="flex items-center gap-3">
+            <Bell className="size-6 shrink-0 text-accent" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <h2 className="font-semibold">Напоминания</h2>
+              <p className="text-sm text-muted">Витамины, дела, врачи — уведомлением на телефон.</p>
+            </div>
+            <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+          </Card>
+        </Link>
+
         <Link href="/profile/calendar" className="block active:opacity-90">
           <Card className="flex items-center gap-3">
             <CalendarDays className="size-6 shrink-0 text-accent" aria-hidden />
@@ -78,6 +93,11 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           familyName={family.name}
         />
 
+        <Card className="flex flex-col gap-3">
+          <h2 className="font-semibold">Оформление</h2>
+          <ThemePicker current={theme} />
+        </Card>
+
         <Card className="flex flex-col gap-2">
           <h2 className="font-semibold">Установить на iPhone</h2>
           <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-muted">
@@ -94,15 +114,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           <p className="text-sm text-muted">На Android: меню Chrome ⋮ → «Установить приложение».</p>
         </Card>
 
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-card font-semibold text-danger shadow-sm active:scale-[0.98]"
-          >
-            <LogOut className="size-5" aria-hidden />
-            Выйти
-          </button>
-        </form>
+        <SignOutButton />
       </div>
     </>
   );
