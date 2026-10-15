@@ -5,18 +5,17 @@ import { redirect } from "next/navigation";
 import { isMeal, mealByHour } from "@/lib/data";
 import { checkRange, error, isDate, num, ok, str, type FormMessageState } from "@/lib/form";
 import {
-  aggregateShopping,
   guessDepartment,
   INGREDIENT_UNITS,
   isDepartment,
-  planShoppingSync,
   scaleNutrition,
   weekDays,
   weekStartOf,
   type IngredientUnit,
 } from "@/lib/menu";
-import { getPlan, getRecipe, getRecipesWithIngredients, getShopping } from "@/lib/menu-data";
+import { getPlan, getRecipe } from "@/lib/menu-data";
 import { getSession } from "@/lib/session";
+import { syncShoppingForWeek } from "@/lib/shopping-sync";
 import { createClient } from "@/lib/supabase/server";
 import { TIME_ZONE, todayKey } from "@/lib/time";
 
@@ -300,23 +299,9 @@ export async function buildShoppingFromMenu(formData: FormData) {
   if (!session?.family) redirect("/login");
   const week = str(formData, "week");
   const start = isDate(week) ? weekStartOf(week) : weekStartOf(todayKey());
-  const days = weekDays(start);
-  const plan = await getPlan(days[0], days[6]);
-  const recipes = await getRecipesWithIngredients([...new Set(plan.map((p) => p.recipe_id).filter((v): v is string => Boolean(v)))]);
-  const byId = new Map(recipes.map((r) => [r.id, r]));
-  const needs = aggregateShopping(plan.map((p) => ({ servings: p.servings, recipe: p.recipe_id ? (byId.get(p.recipe_id) ?? null) : null })));
-  const existing = await getShopping();
-  const { removeIds, insert } = planShoppingSync(existing, needs, start);
-
-  const supabase = await createClient();
-  if (removeIds.length) await supabase.from("shopping_items").delete().in("id", removeIds);
-  if (insert.length) {
-    await supabase.from("shopping_items").insert(
-      insert.map((n) => ({ name: n.name, amount: n.amount, unit: n.amount === null ? null : n.unit, department: n.department, source: "menu", week_start: start })),
-    );
-  }
+  const added = await syncShoppingForWeek(start);
   refresh();
-  redirect(`/menu/shopping?built=${insert.length}`);
+  redirect(`/menu/shopping?built=${added}`);
 }
 
 export async function addShoppingItem(_prev: FormMessageState, formData: FormData): Promise<FormMessageState> {

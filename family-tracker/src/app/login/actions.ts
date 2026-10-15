@@ -2,7 +2,9 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { translateAuthError } from "@/lib/auth-errors";
+import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = {
@@ -75,4 +77,30 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+/**
+ * Письмо со ссылкой для смены пароля. Поток без PKCE: ссылка открывается в любом
+ * браузере (например, в Safari, хотя запрос сделан из приложения на главном экране) —
+ * токен приходит во фрагменте адреса, и страница входа сразу предлагает новый пароль.
+ */
+export async function requestPasswordReset(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const { email } = readCredentials(formData);
+  const fields = { email };
+  if (!email) return { fields, message: { type: "error", text: "Введите email" } };
+  const supabase = createPlainClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false },
+  });
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${await siteUrl()}/login` });
+  if (error && /rate limit|too many/i.test(error.message)) {
+    return { fields, message: { type: "error", text: "Письмо уже отправлено недавно. Подождите час и попробуйте снова." } };
+  }
+  // Не сообщаем, есть ли такой email, — одинаковый ответ в обоих случаях.
+  return {
+    fields,
+    message: {
+      type: "info",
+      text: `Если ${email} зарегистрирован, мы отправили письмо со ссылкой. Откройте её на этом телефоне — придумайте новый пароль. Письмо может попасть в «Спам».`,
+    },
+  };
 }

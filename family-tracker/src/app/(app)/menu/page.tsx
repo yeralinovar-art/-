@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus, ShoppingCart, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, ShoppingCart, Sparkles, X } from "lucide-react";
 import { Card, SubmitButton } from "@/components/ui";
 import { MEALS } from "@/lib/data";
 import { isDate } from "@/lib/form";
@@ -9,9 +9,13 @@ import { getPlan, getRecipes } from "@/lib/menu-data";
 import { requireFamilySession } from "@/lib/session";
 import { todayKey } from "@/lib/time";
 import { buildShoppingFromMenu, copyPreviousWeek, deletePlanItem, eatPlanItem } from "./actions";
+import { swapDish } from "./ai-actions";
+import { aiEnabled } from "@/lib/ai";
 import { MenuHeader } from "./MenuHeader";
 
 export const metadata = { title: "Меню — Семья" };
+// «Предложи другое» — запрос к AI до минуты.
+export const maxDuration = 120;
 
 const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.value, m.label === "Перекусы" ? "Перекус" : m.label]));
 const MEAL_ORDER = Object.fromEntries(MEALS.map((m, i) => [m.value, i]));
@@ -25,6 +29,9 @@ export default async function MenuPage({ searchParams }: PageProps<"/menu">) {
   const [session, plan, recipes] = await Promise.all([requireFamilySession(), getPlan(days[0], days[6]), getRecipes()]);
   const kcal = new Map(recipes.map((r) => [r.id, r.perServing.kcal]));
   const thisWeek = start === weekStartOf(today);
+  const ai = aiEnabled();
+  const aiAdded = typeof params.ai === "string" ? Number(params.ai) : null;
+  const aiError = typeof params.ai_error === "string" ? params.ai_error.slice(0, 200) : null;
 
   return (
     <>
@@ -57,6 +64,25 @@ export default async function MenuPage({ searchParams }: PageProps<"/menu">) {
           </Link>
         </div>
 
+        {aiAdded !== null && Number.isFinite(aiAdded) && (
+          <p role="status" className="rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent">
+            AI добавил в меню блюд: {aiAdded}. Список покупок уже собран — он во вкладке «Покупки».
+          </p>
+        )}
+        {aiError && (
+          <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
+            {aiError}
+          </p>
+        )}
+        {ai && (
+          <Link
+            href="/menu/ai"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-family-soft px-5 font-semibold text-family active:scale-[0.98]"
+          >
+            <Sparkles className="size-5" aria-hidden />
+            AI-меню на неделю
+          </Link>
+        )}
         {plan.length > 0 ? (
           <form action={buildShoppingFromMenu}>
             <input type="hidden" name="week" value={start} />
@@ -152,6 +178,20 @@ export default async function MenuPage({ searchParams }: PageProps<"/menu">) {
                             )}
                           </form>
                         </details>
+                        {ai && (
+                          <form action={swapDish}>
+                            <input type="hidden" name="id" value={item.id} />
+                            <SubmitButton
+                              variant="secondary"
+                              className="size-9! min-h-9! w-9! rounded-full! px-0!"
+                              pendingText="…"
+                              aria-label={`Предложить другое вместо: ${item.title}`}
+                              title="Предложить другое"
+                            >
+                              <Sparkles className="mx-auto size-4" aria-hidden />
+                            </SubmitButton>
+                          </form>
+                        )}
                         <form action={deletePlanItem}>
                           <input type="hidden" name="id" value={item.id} />
                           <button
