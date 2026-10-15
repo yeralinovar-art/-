@@ -6,10 +6,11 @@ import { FormMessage, NumberField, SubmitButton, TextField } from "@/components/
 import type { Food, FoodEntry, Meal } from "@/lib/data";
 import type { FormMessageState } from "@/lib/form";
 import { addFromFood, addQuick, createFoodAndAdd } from "../actions";
+import { AiTab } from "./AiTab";
 import { BarcodeScanner } from "./BarcodeScanner";
 
 type Recent = Omit<FoodEntry, "id" | "entry_date" | "meal">;
-type Tab = "search" | "quick" | "own" | "barcode";
+type Tab = "search" | "ai" | "quick" | "own" | "barcode";
 
 const MEAL_OPTIONS: { value: Meal; label: string }[] = [
   { value: "breakfast", label: "Завтрак" },
@@ -27,15 +28,19 @@ export function AddFood({
   pregnant,
   recent,
   initialQuery = "",
+  aiEnabled = false,
+  initialTab = "search",
 }: {
   meal: Meal;
   date: string;
   pregnant: boolean;
   recent: Recent[];
   initialQuery?: string;
+  aiEnabled?: boolean;
+  initialTab?: "search" | "ai";
 }) {
   const [meal, setMeal] = useState<Meal>(initialMeal);
-  const [tab, setTab] = useState<Tab>("search");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [selected, setSelected] = useState<Food | null>(null);
 
   return (
@@ -58,6 +63,7 @@ export function AddFood({
         {(
           [
             ["search", "Поиск"],
+            ["ai", "✨ AI / фото"],
             ["quick", "Быстро"],
             ["own", "Своё блюдо"],
             ["barcode", "Штрихкод"],
@@ -77,6 +83,7 @@ export function AddFood({
       </div>
 
       {tab === "search" && <SearchTab meal={meal} date={date} recent={recent} onSelect={setSelected} initialQuery={initialQuery} />}
+      {tab === "ai" && <AiTab meal={meal} date={date} enabled={aiEnabled} />}
       {tab === "quick" && <QuickTab meal={meal} date={date} />}
       {tab === "own" && <OwnTab meal={meal} date={date} />}
       {tab === "barcode" && <BarcodeTab onFound={setSelected} />}

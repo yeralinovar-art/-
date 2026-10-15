@@ -4,9 +4,12 @@ import { getHealthProfile, getRecentFoods, isMeal, mealByHour } from "@/lib/data
 import { isDate } from "@/lib/form";
 import { requireFamilySession } from "@/lib/session";
 import { TIME_ZONE, todayKey } from "@/lib/time";
+import { aiEnabled } from "@/lib/ai";
 import { AddFood } from "./AddFood";
 
 export const metadata = { title: "Добавить еду — Семья" };
+// AI-оценка по фото может занять до минуты.
+export const maxDuration = 120;
 
 export default async function AddFoodPage({ searchParams }: PageProps<"/food/add">) {
   const params = await searchParams;
@@ -29,7 +32,7 @@ export default async function AddFoodPage({ searchParams }: PageProps<"/food/add
         </Link>
         <h1 className="text-2xl font-bold">Добавить еду</h1>
       </header>
-      <AddFood meal={meal} date={date} pregnant={health.is_pregnant} recent={recent} initialQuery={q} />
+      <AddFood meal={meal} date={date} pregnant={health.is_pregnant} recent={recent} initialQuery={q} aiEnabled={aiEnabled()} initialTab={params.tab === "ai" ? "ai" : "search"} />
     </>
   );
 }

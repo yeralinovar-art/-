@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Apple, CheckSquare, Droplet, Dumbbell, Pill, Plus, Repeat, Scale, X } from "lucide-react";
+import { Apple, Camera, CheckSquare, Droplet, Dumbbell, Pill, Plus, Repeat, Scale, X } from "lucide-react";
 import { addWater } from "@/app/(app)/food/actions";
 
 // Быстрый ввод с любого экрана — только то, что уже работает.
@@ -52,6 +52,12 @@ export function QuickAdd() {
                 <Link href="/food/add" onClick={close} className={tile}>
                   <Apple className="size-7 text-accent" aria-hidden />
                   <span className="text-sm font-medium">Еда</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/food/add?tab=ai" onClick={close} className={tile}>
+                  <Camera className="size-7 text-accent" aria-hidden />
+                  <span className="text-sm font-medium">Фото еды</span>
                 </Link>
               </li>
               <li>
